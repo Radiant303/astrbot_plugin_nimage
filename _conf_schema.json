@@ -1,0 +1,28 @@
+{
+    "api_config": {
+        "description": "API配置项目",
+        "type": "string",
+        "default": "https://ark.cn-beijing.volces.com/api/v3"
+    },
+    "token": {
+        "description": "token",
+        "type": "string",
+        "default": "token"
+    },
+    "model": {
+        "description": "模型",
+        "type": "string",
+        "default": "doubao-seedream-4-5-251128"
+    },
+    "size": {
+        "description": "图片尺寸",
+        "type": "string",
+        "default": "2K"
+    },
+    "enable_llm_tool": {
+        "description": "是否启用 LLM 工具",
+        "type": "bool",
+        "hint": "可以在自然对话使用生图功能",
+        "default": false
+    }
+}

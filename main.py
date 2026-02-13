@@ -1,24 +1,51 @@
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
-from astrbot.api.star import Context, Star, register
-from astrbot.api import logger
+import aiohttp
 
-@register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
-class MyPlugin(Star):
-    def __init__(self, context: Context):
+from astrbot.api import AstrBotConfig, logger
+from astrbot.api.event import AstrMessageEvent, filter
+from astrbot.api.message_components import Image
+from astrbot.api.star import Context, Star, register
+
+from .provider.openai_image import OpenAiProvider
+
+
+@register("nimage", "Radiant303", "生图插件", "1.0.0")
+class NImagePlugin(Star):
+    def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.config = config
+        self.session: aiohttp.ClientSession | None = None
+
+    def _ensure_session(self):
+        if self.session is None or self.session.closed:
+            self.session = aiohttp.ClientSession()
 
     async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
+        logger.info("NImagePlugin initialize called")
+        self._ensure_session()
 
     # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
-    @filter.command("helloworld")
+    @filter.command("画画")
     async def helloworld(self, event: AstrMessageEvent):
-        """这是一个 hello world 指令""" # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
-        user_name = event.get_sender_name()
-        message_str = event.message_str # 用户发的纯文本消息字符串
-        message_chain = event.get_messages() # 用户所发的消息的消息链 # from astrbot.api.message_components import *
-        logger.info(message_chain)
-        yield event.plain_result(f"Hello, {user_name}, 你发了 {message_str}!") # 发送一条纯文本消息
+        """这是一个画画指令"""  # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
+        prompt = event.message_str
+        image_url = await self._query_image(prompt)
+
+        if isinstance(image_url, Exception):
+            yield event.plain_result(f"错误: {image_url}")
+        else:
+            yield event.image_result(image_url)
+
+    async def _query_image(self, prompt: str) -> str:
+        self._ensure_session()
+        provider = OpenAiProvider(self.config)
+        try:
+            image_url = await provider.generate_image(prompt)
+            return image_url
+        except Exception as e:
+            logger.error(e)
+            return e
 
     async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
+        if self.session and not self.session.closed:
+            await self.session.close()
+        logger.info("NImagePlugin 已卸载")
