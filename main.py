@@ -71,7 +71,7 @@ class CreateImageTool(FunctionTool[AstrAgentContext]):
             "properties": {
                 "prompt": {
                     "type": "string",
-                    "description": "详细的图片描述，用于生成图像。应该包含主体、风格、场景、光线、色彩等细节。例如：'一只橘色的猫坐在窗台上，阳光洒进来，水彩画风格'",
+                    "description": "用于生成图像的详细描述提示词：包含主体、场景、风格、光线与色彩等关键细节，画面具体清晰，不使用赛博朋克风格。示例：'一只橘猫坐在窗台上，阳光洒入室内，暖色调，水彩画风格。",
                 },
             },
             "required": ["prompt"],
