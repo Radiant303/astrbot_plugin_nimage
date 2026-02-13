@@ -89,5 +89,11 @@ class CreateImageTool(FunctionTool[AstrAgentContext]):
         if not self.plugin_instance.enable_llm_tool:
             return "生图 LLM 工具未启用"
         result = await self.plugin_instance._query_image(kwargs.get("prompt"))
+        if isinstance(result, Exception) or not isinstance(result, str):
+            # 处理错误情况
+            return MessageEventResult().message(f"获取图片失败: {result}")
+        # 确保是有效的 HTTP URL
+        if not (result.startswith("http://") or result.startswith("https://")):
+            return MessageEventResult().message("无效的图片链接")
         MessageEventResult().url_image(result)
         return result
