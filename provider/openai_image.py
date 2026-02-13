@@ -12,6 +12,14 @@ class OpenAiProvider:
         )
 
     async def generate_image(self, prompt: str):
+        if not self.config.get("api_config"):
+            raise ValueError("请先配置 api_config")
+        if not self.config.get("token"):
+            raise ValueError("请先配置 token")
+        if not self.config.get("model"):
+            raise ValueError("请先配置 model")
+        if not self.config.get("size"):
+            raise ValueError("请先配置 size")
         imagesResponse = await self.client.images.generate(
             model=self.config.get("model"),
             prompt=prompt,
