@@ -21,6 +21,8 @@ class NImagePlugin(Star):
         self.enable_llm_tool: bool = self.config.get("enable_llm_tool", False)
         self.session: aiohttp.ClientSession | None = None
         self._instance = self
+        if self.enable_llm_tool:
+            self.context.add_llm_tools(CreateImageTool(plugin_instance=self))
 
     def _ensure_session(self):
         if self.session is None or self.session.closed:
@@ -29,8 +31,6 @@ class NImagePlugin(Star):
     async def initialize(self):
         logger.info("NImagePlugin initialize called")
         self._ensure_session()
-        if self.enable_llm_tool:
-            self.context.add_llm_tools(CreateImageTool(plugin_instance=self))
 
     # 注册指令的装饰器。指令名为 画画
     @filter.command("画画")
