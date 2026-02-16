@@ -1,7 +1,7 @@
 from openai import AsyncOpenAI
 
 
-class OpenAiProvider:
+class DouBaoProvider:
     def __init__(self, config: dict):
         self.config = config
         self.client = AsyncOpenAI(

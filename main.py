@@ -10,7 +10,7 @@ from astrbot.core.agent.tool import FunctionTool, ToolExecResult
 from astrbot.core.astr_agent_context import AstrAgentContext
 from astrbot.core.message.message_event_result import MessageEventResult
 
-from .provider.openai_image import OpenAiProvider
+from .provider.doubao_image import DouBaoProvider
 
 
 @register("nimage", "Radiant303", "生图插件", "1.0.0")
@@ -21,7 +21,6 @@ class NImagePlugin(Star):
         self.enable_llm_tool: bool = self.config.get("enable_llm_tool", False)
         self.session: aiohttp.ClientSession | None = None
         self._instance = self
-        self.context.add_llm_tools(CreateImageTool(plugin_instance=self))
 
     def _ensure_session(self):
         if self.session is None or self.session.closed:
@@ -30,6 +29,8 @@ class NImagePlugin(Star):
     async def initialize(self):
         logger.info("NImagePlugin initialize called")
         self._ensure_session()
+        if self.enable_llm_tool:
+            self.context.add_llm_tools(CreateImageTool(plugin_instance=self))
 
     # 注册指令的装饰器。指令名为 画画
     @filter.command("画画")
@@ -45,7 +46,7 @@ class NImagePlugin(Star):
 
     async def _query_image(self, prompt: str) -> str:
         self._ensure_session()
-        provider = OpenAiProvider(self.config)
+        provider = DouBaoProvider(self.config)
         try:
             image_url = await provider.generate_image(prompt)
             return image_url

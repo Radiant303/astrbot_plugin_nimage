@@ -213,7 +213,7 @@ graph LR
 
 <div align="center">
 
-> 感谢原作者 **[木有知](https://github.com/muyouzhi6/astrbot_plugin_gitee_aiimg)** 开发的初始版本  
+> 感谢原作者 **[Olynx7](https://github.com/Olynx7/astrbot_plugin_text2img)** 开发的初始版本  
 > 本插件在其基础上进行了全面重构与优化
 
 <br>
