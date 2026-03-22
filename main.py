@@ -1,7 +1,9 @@
 import aiohttp
+from astrbot.core.provider.entities import LLMResponse
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 
+import astrbot.api.message_components as Comp
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, register
@@ -58,7 +60,21 @@ class NImagePlugin(Star):
         if self.session and not self.session.closed:
             await self.session.close()
         logger.info("NImagePlugin 已卸载")
+    @filter.on_llm_response()
+    async def handle_silence(self, event: AstrMessageEvent, resp: LLMResponse):
+            if event.get_extra("voice_silence_mode"):
+                # 1. 消除标记
+                event.set_extra("voice_silence_mode", False)
 
+                # 2. 核心：将模型的文本强制修改为 \u200b (零宽空格)
+                # 这样做的效果：
+                # - Runner 看到 resp 有内容 (len(parts) > 0)，消除 "LLM returned empty" 警告。
+                # - Responder 看到消息链不为空，消除 "消息链全为 Reply" 警告。
+                # - 用户在前端什么都看不到，实现“模型不说话”的效果。
+                resp.completion_text = "\u200b"
+
+                # 3. 停止事件防止后续可能的冗余处理
+                event.stop_event()
 
 @dataclass
 class CreateImageTool(FunctionTool[AstrAgentContext]):
@@ -72,7 +88,7 @@ class CreateImageTool(FunctionTool[AstrAgentContext]):
             "properties": {
                 "prompt": {
                     "type": "string",
-                    "description": "用于生成图像的详细描述提示词：包含主体、场景、风格、光线与色彩等关键细节，画面具体清晰，不使用赛博朋克风格。示例：'一只橘猫坐在窗台上，阳光洒入室内，暖色调，水彩画风格。",
+                    "description": "用于生成图像的详细描述提示词,尽可能的详细：包含主体、场景、风格、光线与色彩等关键细节，画面具体清晰，不使用赛博朋克风格。",
                 },
             },
             "required": ["prompt"],
@@ -96,5 +112,8 @@ class CreateImageTool(FunctionTool[AstrAgentContext]):
         # 确保是有效的 HTTP URL
         if not (result.startswith("http://") or result.startswith("https://")):
             return MessageEventResult().message("无效的图片链接")
-        MessageEventResult().url_image(result)
-        return result
+        await context.context.event.send(
+            context.context.event.chain_result([Comp.Image.fromURL(result)])
+        )
+        context.context.event.set_extra("voice_silence_mode", True)
+        return "SUCCESS"
